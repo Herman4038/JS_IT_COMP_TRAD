@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JS IT COMP TRAD - Trading Platform</title>
+
+  <!-- Google Font for brand -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap & FontAwesome from CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Inline page-specific styles -->
+  <style>
+    body { background-color: #f8f9fa; }
+    section.vh-100 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+    .left-side {
+      padding-top: 4rem;
+      padding-bottom: 4rem;
+    }
+    .logo-img { width: 60px; height: auto; }
+    .brand-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.75rem;
+      line-height: 1.2;
+      margin-top: 0.5rem;
+    }
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .form-container {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 360px;
+    }
+    .form-container h3 { margin-bottom: 1.5rem; }
+    .form-container .form-outline { margin-bottom: 1.25rem; }
+    .form-container .btn { width: 100%; }
+    @media (max-width: 767px) {
+      section.vh-100 { padding: 1rem 0; }
+      .left-side { padding-top: 2rem; padding-bottom: 2rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="vh-100">
+    <div class="container-fluid">
+      <div class="row justify-content-center">
+
+        <!-- LEFT SIDE -->
+        <div class="col-md-6 text-black left-side">
+
+          <!-- Logo & Brand centered -->
+          <div class="logo-container">
+            <img
+              src="{% static 'images/JS_LOGO.jpg' %}"
+              alt="JS IT COMP Logo"
+              class="logo-img"
+            >
+            <span class="brand-title fw-bold mb-0">
+              JS IT Computer Trading
+            </span>
+          </div>
+
+          <!-- Centered form card -->
+          <div class="d-flex justify-content-center">
+            <div class="form-container">
+              <form id="login-form" method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <h3 class="fw-normal">Log in</h3>
+
+                <div data-mdb-input-init class="form-outline">
+                  <input
+                    name="username"
+                    type="email"
+                    class="form-control form-control-lg"
+                    placeholder="Email address"
+                    required
+                  />
+                </div>
+
+                <div data-mdb-input-init class="form-outline">
+                  <input
+                    name="password"
+                    type="password"
+                    class="form-control form-control-lg"
+                    placeholder="Password"
+                    required
+                  />
+                </div>
+
+                <button
+                  class="btn btn-info btn-lg"
+                  type="submit"
+                >
+                  Login
+                </button>
+
+                <p class="small mt-3 text-center">
+                  <a class="text-muted" href="#!">Forgot password?</a>
+                </p>
+                <p class="mt-2 text-center">
+                  Don't have an account?
+                  <a href="#!" class="link-info">Register here</a>
+                </p>
+              </form>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT SIDE IMAGE -->
+        <div class="col-sm-6 px-0 d-none d-sm-block">
+          <img
+            src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/img3.webp"
+            alt="Login image"
+            class="w-100 vh-100"
+            style="object-fit: cover; object-position: left;"
+          >
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Bootstrap & Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Your custom login-handling JS -->
+  <script src="{% static 'js/login.js' %}"></script>
+</body>
+</html>

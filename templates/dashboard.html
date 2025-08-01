@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard – JS IT Computer Trading</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap from CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .navbar {
+      margin-bottom: 2rem;
+    }
+    .card {
+      max-width: 480px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .card h5 {
+      margin-bottom: 1rem;
+    }
+    .stats-list {
+      list-style: none;
+      padding: 0;
+    }
+    .stats-list li {
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="{% static 'images/JS_LOGO.jpg' %}" alt="Logo" width="40" class="d-inline-block align-text-top">
+        JS IT Computer Trading
+      </a>
+      <div class="ms-auto">
+        <span class="me-3">Hello, {{ request.user.username }}</span>
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Stats Card -->
+  <div class="card bg-white">
+    <h5 class="card-title text-center">Dashboard</h5>
+    <ul class="stats-list">
+      <li>
+        <strong>Visit Count:</strong> {{ visits }} time{% if visits > 1 %}s{% endif %}
+      </li>
+      <li>
+        <strong>Total Storage:</strong> {{ total_storage }} unit{% if total_storage != 1 %}s{% endif %}
+      </li>
+      <!-- you can add more stats here -->
+    </ul>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
