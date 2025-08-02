@@ -1,29 +1,58 @@
-// static/js/login.js
+// Function to get CSRF token from cookies
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 document.getElementById('login-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const form = e.target;
-    const data = {
-      username: form.username.value,
-      password: form.password.value,
-    };
+  e.preventDefault();  // Prevent default form submission
+  const form = e.target;
+  
+  // Create FormData object to send as regular form data (not JSON)
+  const formData = new FormData(form);
+
+  try {
     const resp = await fetch(form.action, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: JSON.stringify(data),
+      body: formData,
     });
+
     if (resp.ok) {
-      window.location.href = '/dashboard/';
+      // Check if the response is a redirect
+      if (resp.redirected) {
+        window.location.href = resp.url;
+      } else {
+        // If not redirected, check if login was successful
+        const responseText = await resp.text();
+        if (responseText.includes('dashboard') || responseText.includes('error')) {
+          // If there's an error message in the response, show it
+          if (responseText.includes('error')) {
+            alert('Login failed: Invalid credentials');
+          } else {
+            window.location.href = '/dashboard/';
+          }
+        } else {
+          window.location.href = '/dashboard/';
+        }
+      }
     } else {
-      alert('Login failed');
+      alert('Login failed: ' + resp.statusText);
     }
-  });
-  
-  function getCookie(name) {
-    return document.cookie.split('; ')
-      .find(row => row.startsWith(name + '='))
-      ?.split('=')[1];
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('Login failed: Network error');
   }
-  
+});
