@@ -145,6 +145,15 @@ class Inventory(models.Model):
         verbose_name_plural = "Inventory Items"
         ordering = ['item_name']
     
+    def clean(self):
+        """Convert empty serial numbers to None to avoid unique constraint violations"""
+        if self.serial_number == '':
+            self.serial_number = None
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.brand} {self.model} - {self.item_name}"
     

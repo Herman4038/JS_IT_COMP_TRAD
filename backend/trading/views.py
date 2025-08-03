@@ -387,6 +387,10 @@ def add_inventory_item(request):
             discount_price_data = data.get('discount_price', '')
             discount_price = float(discount_price_data) if discount_price_data and discount_price_data.strip() else None
             
+            # Handle serial number - convert empty string to None
+            serial_number_data = data.get('serial_number', '')
+            serial_number = serial_number_data if serial_number_data.strip() else None
+            
             inventory_item = Inventory.objects.create(
                 item_name=data.get('item_name'),
                 brand=data.get('brand'),
@@ -396,7 +400,7 @@ def add_inventory_item(request):
                 srp_price=float(data.get('srp_price', 0)),
                 discount_price=discount_price,
                 quantity=int(data.get('quantity', 0)),
-                serial_number=data.get('serial_number', ''),
+                serial_number=serial_number,
             )
             
             if 'item_picture' in request.FILES:
@@ -431,7 +435,10 @@ def edit_inventory_item(request, item_id):
             item.discount_price = float(discount_price_data) if discount_price_data and discount_price_data.strip() else None
             
             item.quantity = int(data.get('quantity', 0))
-            item.serial_number = data.get('serial_number', '')
+            
+            # Handle serial number - convert empty string to None
+            serial_number_data = data.get('serial_number', '')
+            item.serial_number = serial_number_data if serial_number_data.strip() else None
             
             if 'item_picture' in request.FILES:
                 item.item_picture = request.FILES['item_picture']
