@@ -499,28 +499,76 @@ def update_item_ajax(request, item_id):
     
     return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
 
+
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.formatting.rule import FormulaRule
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from django.utils import timezone
+import io
+
 @login_required
 def export_inventory_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="js_it_inventory_{timezone.localtime(timezone.now()).strftime("%Y%m%d_%H%M%S")}.csv"'
-    
-    writer = csv.writer(response)
-    
-    writer.writerow(['FOCUS', 'Model', 'Description', 'Quantity', 'SRP Price', 'DISCOUNT PRICE'])
-    
+    # Rename still keeps the old URL; we now output .xlsx
     inventory_items = Inventory.objects.all().order_by('brand', 'item_name')
-    
+
+    # Create workbook and sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Inventory"
+
+    headers = ['FOCUS', 'Model', 'Description', 'Quantity', 'SRP Price', 'DISCOUNT PRICE']
+    bold_font = Font(bold=True)
+    ws.append(headers)
+    for col_idx, _ in enumerate(headers, start=1):
+        ws.cell(row=1, column=col_idx).font = bold_font
+
+    # Track max width per column for auto-sizing
+    max_widths = [len(h) for h in headers]
+
     for item in inventory_items:
         focus = item.brand if item.brand else 'Unknown'
         model = item.model if item.model else 'Unknown'
-        description = item.description if item.description else item.item_name
+        description = item.description if item.description else item.item_name or ''
         quantity = item.quantity
         srp_price = float(item.srp_price)
         discount_price = float(item.discount_price) if item.discount_price else 0.0
-        
-        writer.writerow([focus, model, description, quantity, srp_price, discount_price])
-    
+
+        row = [focus, model, description, quantity, srp_price, discount_price]
+        ws.append(row)
+
+        for idx, val in enumerate(row):
+            text = str(val)
+            if len(text) > max_widths[idx]:
+                max_widths[idx] = len(text)
+
+    # Adjust column widths (with a bit of padding)
+    for i, width in enumerate(max_widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = width + 5
+
+    # Conditional formatting: if Quantity (column D) <= 1, make entire row font red
+    max_row = ws.max_row
+    if max_row >= 2:
+        # Apply formula rule to rows 2..end over all columns A..F
+        # Use a formula that locks column D but adjusts row: =$D2<=1
+        red_font = Font(color="FF0000")
+        rule = FormulaRule(formula=["$D2<=1"], font=red_font)
+        ws.conditional_formatting.add(f"A2:F{max_row}", rule)
+
+    # Save to in-memory bytes
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"js_it_inventory_{timezone.localtime(timezone.now()).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response = HttpResponse(
+        output.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
 
 @login_required
 def import_inventory_csv(request):
