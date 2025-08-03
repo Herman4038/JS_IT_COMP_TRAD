@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
-from .models import Inventory, TimeLog
+from .models import Inventory, TimeLog, Sale, BuyItem
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import json
@@ -89,6 +89,228 @@ def dashboard(request):
     }
     
     return render(request, 'dashboard.html', context)
+
+@login_required
+def buy_item(request, item_id):
+    item = get_object_or_404(Inventory, id=item_id)
+    
+    if request.method == 'POST':
+        try:
+            quantity_bought = int(request.POST.get('quantity', 1))
+            supplier = request.POST.get('supplier', '')
+            notes = request.POST.get('notes', '')
+            
+            if quantity_bought <= 0:
+                messages.error(request, 'Quantity must be greater than 0.')
+                return redirect('dashboard')
+            
+            unit_cost = float(request.POST.get('unit_cost', item.unit_cost))
+            
+            buy_item = BuyItem.objects.create(
+                buyer=request.user,
+                item=item,
+                quantity_bought=quantity_bought,
+                unit_cost=unit_cost,
+                supplier=supplier,
+                notes=notes
+            )
+            
+            messages.success(request, f'Purchase recorded! {quantity_bought} units of {item.item_name} bought for ₱{buy_item.total_cost:,.2f}')
+            return redirect('dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error recording purchase: {str(e)}')
+    
+    context = {
+        'item': item,
+        'session_timeout': settings.SESSION_TIMEOUT,
+    }
+    
+    return render(request, 'buy_item.html', context)
+
+@login_required
+def buy_history(request):
+    buy_items = BuyItem.objects.all().order_by('-purchase_date')
+    
+    date_filter = request.GET.get('date')
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            buy_items = buy_items.filter(purchase_date__date=filter_date)
+        except ValueError:
+            pass
+    
+    buyer_filter = request.GET.get('buyer')
+    if buyer_filter:
+        buy_items = buy_items.filter(buyer__username__icontains=buyer_filter)
+    
+    paginator = Paginator(buy_items, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    total_purchases = buy_items.count()
+    total_cost = sum(buy_item.total_cost for buy_item in buy_items)
+    
+    context = {
+        'page_obj': page_obj,
+        'date_filter': date_filter,
+        'buyer_filter': buyer_filter,
+        'total_purchases': total_purchases,
+        'total_cost': total_cost,
+        'session_timeout': settings.SESSION_TIMEOUT,
+    }
+    
+    return render(request, 'buy_history.html', context)
+
+@login_required
+def export_buy_history_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="js_it_buy_history_{timezone.localtime(timezone.now()).strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Buyer', 'Item', 'Quantity Bought', 'Unit Cost', 'Total Cost', 'Supplier'])
+    
+    buy_items = BuyItem.objects.all().order_by('-purchase_date')
+    
+    for buy_item in buy_items:
+        writer.writerow([
+            buy_item.purchase_date.strftime('%Y-%m-%d %H:%M'),
+            buy_item.buyer.username,
+            buy_item.item.item_name,
+            buy_item.quantity_bought,
+            float(buy_item.unit_cost),
+            float(buy_item.total_cost),
+            buy_item.supplier
+        ])
+    
+    return response
+
+@login_required
+def cashier(request):
+    search_query = request.GET.get('search', '')
+    inventory_items = Inventory.objects.filter(quantity__gt=0)
+    
+    if search_query:
+        inventory_items = inventory_items.filter(
+            Q(item_name__icontains=search_query) |
+            Q(brand__icontains=search_query) |
+            Q(model__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+    
+    paginator = Paginator(inventory_items, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'session_timeout': settings.SESSION_TIMEOUT,
+    }
+    
+    return render(request, 'cashier.html', context)
+
+@login_required
+def process_sale(request, item_id):
+    item = get_object_or_404(Inventory, id=item_id)
+    
+    if request.method == 'POST':
+        try:
+            quantity_sold = int(request.POST.get('quantity', 1))
+            customer_name = request.POST.get('customer_name', '')
+            payment_method = request.POST.get('payment_method', 'Cash')
+            notes = request.POST.get('notes', '')
+            
+            if quantity_sold <= 0:
+                messages.error(request, 'Quantity must be greater than 0.')
+                return redirect('cashier')
+            
+            if quantity_sold > item.quantity:
+                messages.error(request, f'Not enough stock. Available: {item.quantity}')
+                return redirect('cashier')
+            
+            unit_price = float(request.POST.get('unit_price', item.srp_price))
+            
+            sale = Sale.objects.create(
+                cashier=request.user,
+                item=item,
+                quantity_sold=quantity_sold,
+                unit_price=unit_price,
+                customer_name=customer_name,
+                payment_method=payment_method,
+                notes=notes
+            )
+            
+            messages.success(request, f'Sale processed successfully! {quantity_sold} units of {item.item_name} sold for ₱{sale.total_amount:,.2f}')
+            return redirect('cashier')
+            
+        except Exception as e:
+            messages.error(request, f'Error processing sale: {str(e)}')
+    
+    context = {
+        'item': item,
+        'session_timeout': settings.SESSION_TIMEOUT,
+    }
+    
+    return render(request, 'process_sale.html', context)
+
+@login_required
+def sales_history(request):
+    sales = Sale.objects.all().order_by('-sale_date')
+    
+    date_filter = request.GET.get('date')
+    if date_filter:
+        try:
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            sales = sales.filter(sale_date__date=filter_date)
+        except ValueError:
+            pass
+    
+    cashier_filter = request.GET.get('cashier')
+    if cashier_filter:
+        sales = sales.filter(cashier__username__icontains=cashier_filter)
+    
+    paginator = Paginator(sales, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    total_sales = sales.count()
+    total_revenue = sum(sale.total_amount for sale in sales)
+    
+    context = {
+        'page_obj': page_obj,
+        'date_filter': date_filter,
+        'cashier_filter': cashier_filter,
+        'total_sales': total_sales,
+        'total_revenue': total_revenue,
+        'session_timeout': settings.SESSION_TIMEOUT,
+    }
+    
+    return render(request, 'sales_history.html', context)
+
+@login_required
+def export_sales_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="js_it_sales_{timezone.localtime(timezone.now()).strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Cashier', 'Item', 'Quantity Sold', 'Unit Price', 'Total Amount', 'Customer', 'Payment Method'])
+    
+    sales = Sale.objects.all().order_by('-sale_date')
+    
+    for sale in sales:
+        writer.writerow([
+            sale.sale_date.strftime('%Y-%m-%d %H:%M'),
+            sale.cashier.username,
+            sale.item.item_name,
+            sale.quantity_sold,
+            float(sale.unit_price),
+            float(sale.total_amount),
+            sale.customer_name,
+            sale.payment_method
+        ])
+    
+    return response
 
 @login_required
 def time_in(request):

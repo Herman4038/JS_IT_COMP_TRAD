@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Inventory, TimeLog
+from .models import Inventory, TimeLog, Sale, BuyItem
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
@@ -119,4 +119,54 @@ class TimeLogAdmin(admin.ModelAdmin):
     )
     
     def has_add_permission(self, request):
-        return False 
+        return False
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ['sale_date', 'cashier', 'item', 'quantity_sold', 'unit_price', 'total_amount_display', 'customer_name', 'payment_method']
+    list_filter = ['sale_date', 'payment_method', 'cashier']
+    search_fields = ['item__item_name', 'customer_name', 'cashier__username']
+    readonly_fields = ['sale_date', 'total_amount']
+    date_hierarchy = 'sale_date'
+    
+    def total_amount_display(self, obj):
+        return f"₱{obj.total_amount:,.2f}"
+    total_amount_display.short_description = 'Total Amount'
+    
+    fieldsets = (
+        ('Sale Information', {
+            'fields': ('cashier', 'item', 'quantity_sold', 'unit_price', 'total_amount')
+        }),
+        ('Customer Details', {
+            'fields': ('customer_name', 'payment_method')
+        }),
+        ('Additional Information', {
+            'fields': ('sale_date', 'notes'),
+            'classes': ('collapse',)
+        }),
+    )
+
+@admin.register(BuyItem)
+class BuyItemAdmin(admin.ModelAdmin):
+    list_display = ['purchase_date', 'buyer', 'item', 'quantity_bought', 'unit_cost', 'total_cost_display', 'supplier']
+    list_filter = ['purchase_date', 'buyer', 'supplier']
+    search_fields = ['item__item_name', 'supplier', 'buyer__username']
+    readonly_fields = ['purchase_date', 'total_cost']
+    date_hierarchy = 'purchase_date'
+    
+    def total_cost_display(self, obj):
+        return f"₱{obj.total_cost:,.2f}"
+    total_cost_display.short_description = 'Total Cost'
+    
+    fieldsets = (
+        ('Purchase Information', {
+            'fields': ('buyer', 'item', 'quantity_bought', 'unit_cost', 'total_cost')
+        }),
+        ('Supplier Details', {
+            'fields': ('supplier',)
+        }),
+        ('Additional Information', {
+            'fields': ('purchase_date', 'notes'),
+            'classes': ('collapse',)
+        }),
+    ) 

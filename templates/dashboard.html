@@ -81,255 +81,337 @@
       font-size: 0.9rem;
       padding: 0.25rem 0.5rem;
     }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 0 15px 15px 0;
+      padding: 1rem 0.5rem;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar:hover {
+      left: 0;
+      padding: 1rem;
+    }
+    
+    .sidebar:not(:hover) {
+      left: -60px;
+    }
+    
+    .sidebar-btn {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .sidebar-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      transform: translateX(5px);
+    }
+    
+    .sidebar-btn i {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .sidebar-btn span {
+      display: none;
+    }
+    
+    .sidebar:hover .sidebar-btn span {
+      display: block;
+    }
+    
+    .main-content {
+      margin-left: 0;
+      transition: margin-left 0.3s ease;
+    }
+    
+    .sidebar:hover + .main-content {
+      margin-left: 80px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand bg-white shadow-sm">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a href="{% url 'csv_import_view' %}" class="sidebar-btn" title="Import CSV">
+      <i class="fas fa-file-import"></i>
+      <span>Import</span>
+    </a>
+    <a href="{% url 'export_inventory_csv' %}" class="sidebar-btn" title="Export CSV">
+      <i class="fas fa-file-export"></i>
+      <span>Export</span>
+    </a>
+    <a href="{% url 'time_logs' %}" class="sidebar-btn" title="Time Logs">
+      <i class="fas fa-history"></i>
+      <span>Time Logs</span>
+    </a>
+    <a href="{% url 'cashier' %}" class="sidebar-btn" title="Cashier">
+      <i class="fas fa-cash-register"></i>
+      <span>Cashier</span>
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <img src="{% static 'images/JS_LOGO.jpg' %}" alt="Logo" width="40" class="d-inline-block align-text-top">
+          JS IT Computer Trading
+        </a>
+        <div class="ms-auto d-flex align-items-center">
+          <!-- Time Tracking Status -->
+          <div class="me-3">
+            {% if current_time_log %}
+              <span class="badge bg-success me-2">
+                <i class="fas fa-clock me-1"></i>Time In: {{ current_time_log.time_in|date:"g:i A" }}
+              </span>
+            {% else %}
+              <span class="badge bg-secondary me-2">
+                <i class="fas fa-clock me-1"></i>Not Clocked In
+              </span>
+            {% endif %}
+          </div>
+          
+          <!-- Time Tracking Buttons -->
+          <div class="btn-group me-3" role="group">
+            {% if current_time_log %}
+              <a href="{% url 'time_out' %}" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-sign-out-alt me-1"></i>Time Out
+              </a>
+            {% else %}
+              <a href="{% url 'time_in' %}" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-sign-in-alt me-1"></i>Time In
+              </a>
+            {% endif %}
+          </div>
+          
+          <span class="me-3">Hello, {{ request.user.username }}</span>
+          <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Logout</a>
+        </div>
+      </div>
+    </nav>
+
     <div class="container">
-      <a class="navbar-brand" href="#">
-        <img src="{% static 'images/JS_LOGO.jpg' %}" alt="Logo" width="40" class="d-inline-block align-text-top">
-        JS IT Computer Trading
-      </a>
-      <div class="ms-auto d-flex align-items-center">
-        <!-- Time Tracking Status -->
-        <div class="me-3">
-          {% if current_time_log %}
-            <span class="badge bg-success me-2">
-              <i class="fas fa-clock me-1"></i>Time In: {{ current_time_log.time_in|date:"g:i A" }}
-            </span>
-          {% else %}
-            <span class="badge bg-secondary me-2">
-              <i class="fas fa-clock me-1"></i>Not Clocked In
-            </span>
-          {% endif %}
-        </div>
-        
-        <!-- Time Tracking Buttons -->
-        <div class="btn-group me-3" role="group">
-          {% if current_time_log %}
-            <a href="{% url 'time_out' %}" class="btn btn-outline-danger btn-sm">
-              <i class="fas fa-sign-out-alt me-1"></i>Time Out
-            </a>
-          {% else %}
-            <a href="{% url 'time_in' %}" class="btn btn-outline-success btn-sm">
-              <i class="fas fa-sign-in-alt me-1"></i>Time In
-            </a>
-          {% endif %}
-        </div>
-        
-        <span class="me-3">Hello, {{ request.user.username }}</span>
-        <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Logout</a>
-      </div>
-    </div>
-  </nav>
 
-  <div class="container">
+      <!-- Messages -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
 
-    <!-- Messages -->
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="stats-card text-center">
+            <i class="fas fa-boxes fa-2x mb-2"></i>
+            <h4>{{ total_items }}</h4>
+            <p class="mb-0">Total Items</p>
+          </div>
         </div>
-      {% endfor %}
-    {% endif %}
+        <div class="col-md-3">
+          <div class="stats-card text-center">
+            <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+            <h4>₱{{ total_value|floatformat:2 }}</h4>
+            <p class="mb-0">Total Value</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card text-center">
+            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+            <h4>{{ low_stock_items }}</h4>
+            <p class="mb-0">Low Stock</p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card text-center">
+            <i class="fas fa-times-circle fa-2x mb-2"></i>
+            <h4>{{ out_of_stock_items }}</h4>
+            <p class="mb-0">Out of Stock</p>
+          </div>
+        </div>
+      </div>
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <i class="fas fa-boxes fa-2x mb-2"></i>
-          <h4>{{ total_items }}</h4>
-          <p class="mb-0">Total Items</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-          <h4>₱{{ total_value|floatformat:2 }}</h4>
-          <p class="mb-0">Total Value</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-          <h4>{{ low_stock_items }}</h4>
-          <p class="mb-0">Low Stock</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stats-card text-center">
-          <i class="fas fa-times-circle fa-2x mb-2"></i>
-          <h4>{{ out_of_stock_items }}</h4>
-          <p class="mb-0">Out of Stock</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search and Add Button -->
-    <div class="search-container">
-      <div class="row align-items-center">
-        <div class="col-md-8">
-          <form method="GET" action="{% url 'dashboard' %}" class="d-flex">
-            <input 
-              type="text" 
-              name="search" 
-              value="{{ search_query }}" 
-              class="form-control me-2" 
-              placeholder="Search items, brands, models, or serial numbers..."
-            >
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-search"></i>
-            </button>
-          </form>
-        </div>
-        <div class="col-md-4 text-end">
-          <div class="btn-group" role="group">
-            <a href="{% url 'csv_import_view' %}" class="btn btn-outline-success btn-sm">
-              <i class="fas fa-file-import me-1"></i>Import CSV
-            </a>
-            <a href="{% url 'export_inventory_csv' %}" class="btn btn-outline-info btn-sm">
-              <i class="fas fa-file-export me-1"></i>Export CSV
-            </a>
-            <a href="{% url 'time_logs' %}" class="btn btn-outline-warning btn-sm">
-              <i class="fas fa-history me-1"></i>Time Logs
-            </a>
+      <!-- Search and Add Button -->
+      <div class="search-container">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <form method="GET" action="{% url 'dashboard' %}" class="d-flex">
+              <input 
+                type="text" 
+                name="search" 
+                value="{{ search_query }}" 
+                class="form-control me-2" 
+                placeholder="Search items, brands, models, or serial numbers..."
+              >
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+              </button>
+            </form>
+          </div>
+          <div class="col-md-4 text-end">
             <a href="{% url 'add_inventory_item' %}" class="btn btn-add-item text-white">
               <i class="fas fa-plus me-2"></i>Add New Item
             </a>
           </div>
         </div>
-      </div>
-      
-      <!-- Sort Options -->
-      <div class="row mt-3">
-        <div class="col-md-6">
-          <div class="btn-group" role="group">
-            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}sort=item_name&order=asc" 
-               class="btn btn-outline-secondary btn-sm {% if sort_by == 'item_name' and sort_order == 'asc' %}active{% endif %}">
-              A-Z
-            </a>
-            <a href="?{% if search_query %}search={{ search_query }}&{% endif %}sort=item_name&order=desc" 
-               class="btn btn-outline-secondary btn-sm {% if sort_by == 'item_name' and sort_order == 'desc' %}active{% endif %}">
-              Z-A
-            </a>
+        
+        <!-- Sort Options -->
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <div class="btn-group" role="group">
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}sort=item_name&order=asc" 
+                 class="btn btn-outline-secondary btn-sm {% if sort_by == 'item_name' and sort_order == 'asc' %}active{% endif %}">
+                A-Z
+              </a>
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}sort=item_name&order=desc" 
+                 class="btn btn-outline-secondary btn-sm {% if sort_by == 'item_name' and sort_order == 'desc' %}active{% endif %}">
+                Z-A
+              </a>
+            </div>
+          </div>
+          <div class="col-md-6 text-end">
+            <small class="text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} items</small>
           </div>
         </div>
-        <div class="col-md-6 text-end">
-          <small class="text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} items</small>
-        </div>
       </div>
-    </div>
 
-    <!-- Inventory Grid -->
-    <div class="row">
-      {% for item in page_obj %}
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-          <div class="inventory-card">
-            <!-- Item Image -->
-            {% if item.item_picture %}
-              <img src="{{ item.item_picture.url }}" alt="{{ item.item_name }}" class="item-image">
-            {% else %}
-              <div class="item-image d-flex align-items-center justify-content-center bg-light">
-                <i class="fas fa-image fa-3x text-muted"></i>
-              </div>
-            {% endif %}
-            
-            <!-- Item Details -->
-            <div class="p-3">
-              <h6 class="fw-bold mb-1">{{ item.item_name }}</h6>
-              <p class="text-muted small mb-2">{{ item.brand }} {{ item.model }}</p>
+      <!-- Inventory Grid -->
+      <div class="row">
+        {% for item in page_obj %}
+          <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="inventory-card">
+              <!-- Item Image -->
+              {% if item.item_picture %}
+                <img src="{{ item.item_picture.url }}" alt="{{ item.item_name }}" class="item-image">
+              {% else %}
+                <div class="item-image d-flex align-items-center justify-content-center bg-light">
+                  <i class="fas fa-image fa-3x text-muted"></i>
+                </div>
+              {% endif %}
               
-              <!-- Stock Status -->
-              <span class="stock-status 
-                {% if item.stock_status == 'In Stock' %}stock-in
-                {% elif item.stock_status == 'Low Stock' %}stock-low
-                {% else %}stock-out{% endif %}">
-                {{ item.stock_status }}
-              </span>
-              
-              <!-- Quick Info -->
-              <div class="mt-2">
-                <small class="text-muted">Quantity: <strong>{{ item.quantity }}</strong></small><br>
-                <small class="text-muted">Cost: <strong>₱{{ item.unit_cost }}</strong></small><br>
-                <small class="text-muted">SRP: <strong>₱{{ item.srp_price }}</strong></small>
-              </div>
-              
-              <!-- Action Buttons -->
-              <div class="mt-3 d-flex gap-2">
-                <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-outline-primary btn-sm flex-fill">
-                  <i class="fas fa-edit"></i> Edit
-                </a>
-                <button class="btn btn-outline-danger btn-sm" 
-                        onclick="deleteItem({{ item.id }}, '{{ item.item_name }}')">
-                  <i class="fas fa-trash"></i>
-                </button>
+              <!-- Item Details -->
+              <div class="p-3">
+                <h6 class="fw-bold mb-1">{{ item.item_name }}</h6>
+                <p class="text-muted small mb-2">{{ item.brand }} {{ item.model }}</p>
+                
+                <!-- Stock Status -->
+                <span class="stock-status 
+                  {% if item.stock_status == 'In Stock' %}stock-in
+                  {% elif item.stock_status == 'Low Stock' %}stock-low
+                  {% else %}stock-out{% endif %}">
+                  {{ item.stock_status }}
+                </span>
+                
+                <!-- Quick Info -->
+                <div class="mt-2">
+                  <small class="text-muted">Quantity: <strong>{{ item.quantity }}</strong></small><br>
+                  <small class="text-muted">Cost: <strong>₱{{ item.unit_cost }}</strong></small><br>
+                  <small class="text-muted">SRP: <strong>₱{{ item.srp_price }}</strong></small>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="mt-3 d-flex gap-2">
+                  <a href="{% url 'edit_inventory_item' item.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                    <i class="fas fa-edit"></i> Edit
+                  </a>
+                  <a href="{% url 'buy_item' item.id %}" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-shopping-cart"></i> Buy
+                  </a>
+                  <button class="btn btn-outline-danger btn-sm" 
+                          onclick="deleteItem({{ item.id }}, '{{ item.item_name }}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      {% empty %}
-        <div class="col-12 text-center py-5">
-          <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-          <h4 class="text-muted">No items found</h4>
-          <p class="text-muted">{% if search_query %}Try adjusting your search terms{% else %}Add your first inventory item{% endif %}</p>
-          {% if not search_query %}
-            <a href="{% url 'add_inventory_item' %}" class="btn btn-primary">
-              <i class="fas fa-plus me-2"></i>Add First Item
-            </a>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-      <nav aria-label="Inventory pagination" class="mt-4">
-        <ul class="pagination justify-content-center">
-          {% if page_obj.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
-                <i class="fas fa-angle-double-left"></i>
+        {% empty %}
+          <div class="col-12 text-center py-5">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No items found</h4>
+            <p class="text-muted">{% if search_query %}Try adjusting your search terms{% else %}Add your first inventory item{% endif %}</p>
+            {% if not search_query %}
+              <a href="{% url 'add_inventory_item' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add First Item
               </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
-                <i class="fas fa-angle-left"></i>
-              </a>
-            </li>
-          {% endif %}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
 
-          {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-              <li class="page-item active">
-                <span class="page-link">{{ num }}</span>
-              </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="Inventory pagination" class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">{{ num }}</a>
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
+                  <i class="fas fa-angle-double-left"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
+                  <i class="fas fa-angle-left"></i>
+                </a>
               </li>
             {% endif %}
-          {% endfor %}
 
-          {% if page_obj.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
-                <i class="fas fa-angle-right"></i>
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
-                <i class="fas fa-angle-double-right"></i>
-              </a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
 
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if sort_order %}&order={{ sort_order }}{% endif %}">
+                  <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    </div>
   </div>
 
   <!-- Delete Confirmation Modal -->

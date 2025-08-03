@@ -33,6 +33,60 @@ class TimeLog(models.Model):
             return round(self.duration.total_seconds() / 3600, 2)
         return 0
 
+class BuyItem(models.Model):
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Buyer")
+    item = models.ForeignKey('Inventory', on_delete=models.CASCADE, verbose_name="Item Purchased")
+    quantity_bought = models.PositiveIntegerField(verbose_name="Quantity Bought")
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Unit Cost")
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Cost")
+    supplier = models.CharField(max_length=100, blank=True, verbose_name="Supplier")
+    purchase_date = models.DateTimeField(auto_now_add=True, verbose_name="Purchase Date")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    class Meta:
+        verbose_name = "Buy Item"
+        verbose_name_plural = "Buy Items"
+        ordering = ['-purchase_date']
+    
+    def __str__(self):
+        return f"{self.item.item_name} - {self.quantity_bought} units - {self.purchase_date.strftime('%Y-%m-%d %H:%M')}"
+    
+    def save(self, *args, **kwargs):
+        if not self.total_cost:
+            self.total_cost = self.quantity_bought * self.unit_cost
+        super().save(*args, **kwargs)
+        
+        self.item.quantity += self.quantity_bought
+        self.item.save()
+
+class Sale(models.Model):
+    cashier = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Cashier")
+    item = models.ForeignKey('Inventory', on_delete=models.CASCADE, verbose_name="Item Sold")
+    quantity_sold = models.PositiveIntegerField(verbose_name="Quantity Sold")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Unit Price")
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Amount")
+    sale_date = models.DateTimeField(auto_now_add=True, verbose_name="Sale Date")
+    customer_name = models.CharField(max_length=100, blank=True, verbose_name="Customer Name")
+    payment_method = models.CharField(max_length=50, default="Cash", verbose_name="Payment Method")
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    class Meta:
+        verbose_name = "Sale"
+        verbose_name_plural = "Sales"
+        ordering = ['-sale_date']
+    
+    def __str__(self):
+        return f"{self.item.item_name} - {self.quantity_sold} units - {self.sale_date.strftime('%Y-%m-%d %H:%M')}"
+    
+    def save(self, *args, **kwargs):
+        if not self.total_amount:
+            self.total_amount = self.quantity_sold * self.unit_price
+        super().save(*args, **kwargs)
+        
+        if self.item.quantity >= self.quantity_sold:
+            self.item.quantity -= self.quantity_sold
+            self.item.save()
+
 class Inventory(models.Model):
     item_name = models.CharField(max_length=200, verbose_name="Item Name")
     brand = models.CharField(max_length=100, verbose_name="Brand", default="Unknown")

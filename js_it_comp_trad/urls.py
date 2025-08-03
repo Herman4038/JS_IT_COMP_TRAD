@@ -17,7 +17,14 @@ from backend.trading.views import (
     csv_import_view,
     time_in,
     time_out,
-    time_logs
+    time_logs,
+    cashier,
+    process_sale,
+    sales_history,
+    export_sales_csv,
+    buy_item,
+    buy_history,
+    export_buy_history_csv
 )
 
 urlpatterns = [
@@ -39,6 +46,15 @@ urlpatterns = [
     path('inventory/export/csv/', export_inventory_csv, name='export_inventory_csv'),
     path('inventory/import/csv/', import_inventory_csv, name='import_inventory_csv'),
     path('inventory/import/', csv_import_view, name='csv_import_view'),
+
+    path('buy/item/<int:item_id>/', buy_item, name='buy_item'),
+    path('buy/history/', buy_history, name='buy_history'),
+    path('buy/history/export/csv/', export_buy_history_csv, name='export_buy_history_csv'),
+
+    path('cashier/', cashier, name='cashier'),
+    path('cashier/sale/<int:item_id>/', process_sale, name='process_sale'),
+    path('cashier/sales/', sales_history, name='sales_history'),
+    path('cashier/sales/export/csv/', export_sales_csv, name='export_sales_csv'),
 
     path('accounts/login/', login_view, name='login'),
 
