@@ -1,7 +1,6 @@
-# Add your admin configurations here
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Inventory
+from .models import Inventory, TimeLog
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
@@ -93,3 +92,31 @@ class InventoryAdmin(admin.ModelAdmin):
         css = {
             'all': ('admin/css/inventory_admin.css',)
         } 
+
+@admin.register(TimeLog)
+class TimeLogAdmin(admin.ModelAdmin):
+    list_display = ['user', 'time_in', 'time_out', 'duration_hours', 'is_active', 'get_date']
+    list_filter = ['is_active', 'time_in', 'user']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'notes']
+    readonly_fields = ['time_in', 'duration_hours']
+    date_hierarchy = 'time_in'
+    
+    def get_date(self, obj):
+        return obj.time_in.date()
+    get_date.short_description = 'Date'
+    
+    fieldsets = (
+        ('Employee Information', {
+            'fields': ('user',)
+        }),
+        ('Time Tracking', {
+            'fields': ('time_in', 'time_out', 'is_active')
+        }),
+        ('Session Details', {
+            'fields': ('duration_hours', 'notes'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        return False 

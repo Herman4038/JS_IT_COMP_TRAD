@@ -1,0 +1,364 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Time Logs – JS IT Computer Trading</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap & FontAwesome from CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .navbar {
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .logs-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      padding: 2rem;
+    }
+    .status-active {
+      background: #d4edda;
+      color: #155724;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .status-completed {
+      background: #cce5ff;
+      color: #004085;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .table th {
+      background: #f8f9fa;
+      border-top: none;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 25px;
+      padding: 0.75rem 2rem;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'dashboard' %}">
+        <img src="{% static 'images/JS_LOGO.jpg' %}" alt="Logo" width="40" class="d-inline-block align-text-top">
+        JS IT Computer Trading
+      </a>
+      <div class="ms-auto">
+        <span class="me-3">Hello, {{ request.user.username }}</span>
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    
+    <!-- Messages -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2><i class="fas fa-history text-primary me-2"></i>Employee Time Logs</h2>
+        <p class="text-muted mb-0">Track employee attendance and work hours</p>
+      </div>
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="logs-card mb-4">
+      <form method="GET" class="row g-3">
+        <div class="col-md-4">
+          <label for="user" class="form-label">Filter by Employee</label>
+          <select name="user" id="user" class="form-select">
+            <option value="">All Employees</option>
+            {% for user in users %}
+              <option value="{{ user.username }}" {% if user_filter == user.username %}selected{% endif %}>
+                {{ user.username }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="date" class="form-label">Filter by Date</label>
+          <input type="date" name="date" id="date" class="form-control" value="{{ date_filter }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="fas fa-filter me-1"></i>Filter
+          </button>
+          <a href="{% url 'time_logs' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Clear
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Time Logs Table -->
+    <div class="logs-card">
+      {% if page_obj %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in page_obj %}
+                <tr>
+                  <td>
+                    <strong>{{ log.user.username }}</strong>
+                    {% if log.user.first_name or log.user.last_name %}
+                      <br><small class="text-muted">{{ log.user.first_name }} {{ log.user.last_name }}</small>
+                    {% endif %}
+                  </td>
+                  <td>{{ log.time_in|date:"M d, Y" }}</td>
+                  <td>
+                    <i class="fas fa-sign-in-alt text-success me-1"></i>
+                    {{ log.time_in|date:"g:i A" }}
+                  </td>
+                  <td>
+                    {% if log.time_out %}
+                      <i class="fas fa-sign-out-alt text-danger me-1"></i>
+                      {{ log.time_out|date:"g:i A" }}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if log.duration_hours > 0 %}
+                      <span class="badge bg-info">{{ log.duration_hours }}h</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if log.is_active %}
+                      <span class="status-active">
+                        <i class="fas fa-clock me-1"></i>Active
+                      </span>
+                    {% else %}
+                      <span class="status-completed">
+                        <i class="fas fa-check me-1"></i>Completed
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if log.notes %}
+                      <small class="text-muted">{{ log.notes|truncatechars:30 }}</small>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+          <nav aria-label="Time logs pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page=1{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">
+                    <i class="fas fa-angle-double-left"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">
+                    <i class="fas fa-angle-left"></i>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">
+                    <i class="fas fa-angle-right"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">
+                    <i class="fas fa-angle-double-right"></i>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+
+        <!-- Summary -->
+        <div class="text-center mt-4">
+          <small class="text-muted">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} time logs
+          </small>
+        </div>
+
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+          <h4 class="text-muted">No time logs found</h4>
+          <p class="text-muted">
+            {% if user_filter or date_filter %}
+              Try adjusting your filters
+            {% else %}
+              No time logs have been recorded yet
+            {% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Session timeout countdown
+    let sessionTimeout = {{ session_timeout|default:20 }}; // seconds
+    let warningTime = 10; // Show warning 10 seconds before timeout
+    let countdown = sessionTimeout;
+    let warningShown = false;
+
+    function updateCountdown() {
+      countdown--;
+      
+      // Show warning when 10 seconds remaining
+      if (countdown <= warningTime && !warningShown) {
+        warningShown = true;
+        showTimeoutWarning();
+      }
+      
+      // Auto logout when countdown reaches 0
+      if (countdown <= 0) {
+        window.location.href = "{% url 'logout' %}";
+        return;
+      }
+      
+      setTimeout(updateCountdown, 1000);
+    }
+
+    function showTimeoutWarning() {
+      // Create warning modal
+      const warningModal = document.createElement('div');
+      warningModal.className = 'modal fade';
+      warningModal.id = 'timeoutWarningModal';
+      warningModal.innerHTML = `
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-warning">
+              <h5 class="modal-title">
+                <i class="fas fa-exclamation-triangle me-2"></i>Session Timeout Warning
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p>Your session will expire in <strong id="warningCountdown">${warningTime}</strong> seconds due to inactivity.</p>
+              <p>Click "Stay Logged In" to continue your session.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay Logged In</button>
+              <a href="{% url 'logout' %}" class="btn btn-danger">Logout Now</a>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(warningModal);
+      new bootstrap.Modal(warningModal).show();
+      
+      // Update warning countdown
+      let warningCountdown = warningTime;
+      const warningCountdownElement = document.getElementById('warningCountdown');
+      
+      const warningTimer = setInterval(() => {
+        warningCountdown--;
+        if (warningCountdownElement) {
+          warningCountdownElement.textContent = warningCountdown;
+        }
+        
+        if (warningCountdown <= 0) {
+          clearInterval(warningTimer);
+          window.location.href = "{% url 'logout' %}";
+        }
+      }, 1000);
+    }
+
+    // Reset countdown on user activity
+    function resetCountdown() {
+      countdown = sessionTimeout;
+      warningShown = false;
+    }
+
+    // Listen for user activity
+    document.addEventListener('click', resetCountdown);
+    document.addEventListener('keypress', resetCountdown);
+    document.addEventListener('mousemove', resetCountdown);
+    document.addEventListener('scroll', resetCountdown);
+
+    // Start countdown when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(updateCountdown, 1000);
+    });
+  </script>
+
+</body>
+</html> 

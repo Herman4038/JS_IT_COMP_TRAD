@@ -92,7 +92,33 @@
         <img src="{% static 'images/JS_LOGO.jpg' %}" alt="Logo" width="40" class="d-inline-block align-text-top">
         JS IT Computer Trading
       </a>
-      <div class="ms-auto">
+      <div class="ms-auto d-flex align-items-center">
+        <!-- Time Tracking Status -->
+        <div class="me-3">
+          {% if current_time_log %}
+            <span class="badge bg-success me-2">
+              <i class="fas fa-clock me-1"></i>Time In: {{ current_time_log.time_in|date:"g:i A" }}
+            </span>
+          {% else %}
+            <span class="badge bg-secondary me-2">
+              <i class="fas fa-clock me-1"></i>Not Clocked In
+            </span>
+          {% endif %}
+        </div>
+        
+        <!-- Time Tracking Buttons -->
+        <div class="btn-group me-3" role="group">
+          {% if current_time_log %}
+            <a href="{% url 'time_out' %}" class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-sign-out-alt me-1"></i>Time Out
+            </a>
+          {% else %}
+            <a href="{% url 'time_in' %}" class="btn btn-outline-success btn-sm">
+              <i class="fas fa-sign-in-alt me-1"></i>Time In
+            </a>
+          {% endif %}
+        </div>
+        
         <span class="me-3">Hello, {{ request.user.username }}</span>
         <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">Logout</a>
       </div>
@@ -161,9 +187,20 @@
           </form>
         </div>
         <div class="col-md-4 text-end">
-          <a href="{% url 'add_inventory_item' %}" class="btn btn-add-item text-white">
-            <i class="fas fa-plus me-2"></i>Add New Item
-          </a>
+          <div class="btn-group" role="group">
+            <a href="{% url 'csv_import_view' %}" class="btn btn-outline-success btn-sm">
+              <i class="fas fa-file-import me-1"></i>Import CSV
+            </a>
+            <a href="{% url 'export_inventory_csv' %}" class="btn btn-outline-info btn-sm">
+              <i class="fas fa-file-export me-1"></i>Export CSV
+            </a>
+            <a href="{% url 'time_logs' %}" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-history me-1"></i>Time Logs
+            </a>
+            <a href="{% url 'add_inventory_item' %}" class="btn btn-add-item text-white">
+              <i class="fas fa-plus me-2"></i>Add New Item
+            </a>
+          </div>
         </div>
       </div>
       
@@ -327,6 +364,93 @@
       document.getElementById('deleteForm').action = `/inventory/delete/${itemId}/`;
       new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
+
+    // Session timeout countdown
+    let sessionTimeout = {{ session_timeout|default:20 }}; // seconds
+    let warningTime = 10; // Show warning 10 seconds before timeout
+    let countdown = sessionTimeout;
+    let warningShown = false;
+
+    function updateCountdown() {
+      countdown--;
+      
+      // Show warning when 10 seconds remaining
+      if (countdown <= warningTime && !warningShown) {
+        warningShown = true;
+        showTimeoutWarning();
+      }
+      
+      // Auto logout when countdown reaches 0
+      if (countdown <= 0) {
+        window.location.href = "{% url 'logout' %}";
+        return;
+      }
+      
+      setTimeout(updateCountdown, 1000);
+    }
+
+    function showTimeoutWarning() {
+      // Create warning modal
+      const warningModal = document.createElement('div');
+      warningModal.className = 'modal fade';
+      warningModal.id = 'timeoutWarningModal';
+      warningModal.innerHTML = `
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-warning">
+              <h5 class="modal-title">
+                <i class="fas fa-exclamation-triangle me-2"></i>Session Timeout Warning
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p>Your session will expire in <strong id="warningCountdown">${warningTime}</strong> seconds due to inactivity.</p>
+              <p>Click "Stay Logged In" to continue your session.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay Logged In</button>
+              <a href="{% url 'logout' %}" class="btn btn-danger">Logout Now</a>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(warningModal);
+      new bootstrap.Modal(warningModal).show();
+      
+      // Update warning countdown
+      let warningCountdown = warningTime;
+      const warningCountdownElement = document.getElementById('warningCountdown');
+      
+      const warningTimer = setInterval(() => {
+        warningCountdown--;
+        if (warningCountdownElement) {
+          warningCountdownElement.textContent = warningCountdown;
+        }
+        
+        if (warningCountdown <= 0) {
+          clearInterval(warningTimer);
+          window.location.href = "{% url 'logout' %}";
+        }
+      }, 1000);
+    }
+
+    // Reset countdown on user activity
+    function resetCountdown() {
+      countdown = sessionTimeout;
+      warningShown = false;
+    }
+
+    // Listen for user activity
+    document.addEventListener('click', resetCountdown);
+    document.addEventListener('keypress', resetCountdown);
+    document.addEventListener('mousemove', resetCountdown);
+    document.addEventListener('scroll', resetCountdown);
+
+    // Start countdown when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(updateCountdown, 1000);
+    });
   </script>
 </body>
 </html>
