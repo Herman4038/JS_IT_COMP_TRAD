@@ -383,6 +383,10 @@ def add_inventory_item(request):
     if request.method == 'POST':
         try:
             data = request.POST
+            # Handle discount price - make it optional
+            discount_price_data = data.get('discount_price', '')
+            discount_price = float(discount_price_data) if discount_price_data and discount_price_data.strip() else None
+            
             inventory_item = Inventory.objects.create(
                 item_name=data.get('item_name'),
                 brand=data.get('brand'),
@@ -390,6 +394,7 @@ def add_inventory_item(request):
                 description=data.get('description'),
                 unit_cost=float(data.get('unit_cost', 0)),
                 srp_price=float(data.get('srp_price', 0)),
+                discount_price=discount_price,
                 quantity=int(data.get('quantity', 0)),
                 serial_number=data.get('serial_number', ''),
             )
@@ -420,6 +425,11 @@ def edit_inventory_item(request, item_id):
             item.description = data.get('description')
             item.unit_cost = float(data.get('unit_cost', 0))
             item.srp_price = float(data.get('srp_price', 0))
+            
+            # Handle discount price - make it optional
+            discount_price_data = data.get('discount_price', '')
+            item.discount_price = float(discount_price_data) if discount_price_data and discount_price_data.strip() else None
+            
             item.quantity = int(data.get('quantity', 0))
             item.serial_number = data.get('serial_number', '')
             
@@ -499,7 +509,7 @@ def export_inventory_csv(request):
         description = item.description if item.description else item.item_name
         quantity = item.quantity
         srp_price = float(item.srp_price)
-        discount_price = float(item.discount_price)
+        discount_price = float(item.discount_price) if item.discount_price else 0.0
         
         writer.writerow([focus, model, description, quantity, srp_price, discount_price])
     

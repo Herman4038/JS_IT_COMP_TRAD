@@ -334,6 +334,9 @@
                   <small class="text-muted">Quantity: <strong>{{ item.quantity }}</strong></small><br>
                   <small class="text-muted">Cost: <strong>₱{{ item.unit_cost }}</strong></small><br>
                   <small class="text-muted">SRP: <strong>₱{{ item.srp_price }}</strong></small>
+                  {% if item.discount_price %}
+                    <br><small class="text-success">Discount: <strong>₱{{ item.discount_price }}</strong></small>
+                  {% endif %}
                 </div>
                 
                 <!-- Action Buttons -->

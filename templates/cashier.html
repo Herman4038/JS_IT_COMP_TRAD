@@ -126,8 +126,8 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="text-primary fw-bold">₱{{ item.srp_price|floatformat:2 }}</span>
-                                        {% if item.discount_price != item.srp_price %}
-                                            <br><small class="text-success">Discounted: ₱{{ item.discount_price|floatformat:2 }}</small>
+                                        {% if item.discount_price %}
+                                            <br><small class="text-success">Discount: ₱{{ item.discount_price|floatformat:2 }}</small>
                                         {% endif %}
                                     </div>
                                     <a href="{% url 'process_sale' item.id %}" class="btn btn-sell btn-sm">
